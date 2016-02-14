@@ -22,7 +22,7 @@ classdef Layer < handle
       % setup weights
       self.params = caffe.Blob.empty();
       for n = 1:length(self.attributes.hBlob_blobs)
-        self.params(n) = caffe.Blob(self.attributes.hBlob_blobs(n));
+        self.params(n) = caffe.Blob(self.attributes.hBlob_blobs(n),n);
       end
     end
     function layer_type = type(self)

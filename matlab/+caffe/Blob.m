@@ -3,14 +3,15 @@ classdef Blob < handle
   
   properties (Access = private)
     hBlob_self
+    blob_index_self
   end
   
   methods
-    function self = Blob(hBlob_blob)
+    function self = Blob(hBlob_blob, blob_index)
       CHECK(is_valid_handle(hBlob_blob), 'invalid Blob handle');
-      
       % setup self handle
       self.hBlob_self = hBlob_blob;
+      self.blob_index_self = blob_index;
     end
     function shape = shape(self)
       shape = caffe_('blob_get_shape', self.hBlob_self);
@@ -25,6 +26,11 @@ classdef Blob < handle
     function set_data(self, data)
       data = self.check_and_preprocess_data(data);
       caffe_('blob_set_data', self.hBlob_self, data);
+    end
+    function set_data_multigpu(self, data)
+      %data = self.check_and_preprocess_data(data);
+      CHECK(iscell(data), 'Input data for set_data_multigpu must be a cell array');
+      caffe_('blob_set_data_multigpu', uint32(self.blob_index_self), data);
     end
     function diff = get_diff(self)
       diff = caffe_('blob_get_diff', self.hBlob_self);

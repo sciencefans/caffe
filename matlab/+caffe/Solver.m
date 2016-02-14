@@ -16,6 +16,12 @@ classdef Solver < handle
   methods
     function self = Solver(varargin)
       % decide whether to construct a solver from solver_file or handle
+      % Solver(prototxt, 'multi', [snapshot file], [gpus to use])
+      if nargin >= 2 && strcmp(varargin{2},'multi') == true
+        % construct a solver from solver_file
+        self = caffe.get_solver_multigpu(varargin{1},varargin{3:nargin});
+        return
+      end
       if ~(nargin == 1 && isstruct(varargin{1}))
         % construct a solver from solver_file
         self = caffe.get_solver(varargin{:});
@@ -43,6 +49,10 @@ classdef Solver < handle
       CHECK(ischar(snapshot_filename), 'snapshot_filename must be a string');
       CHECK_FILE_EXIST(snapshot_filename);
       caffe_('solver_restore', self.hSolver_self, snapshot_filename);
+    end
+    function snapshot(self, snapshot_filename)
+      CHECK(ischar(snapshot_filename), 'snapshot_filename must be a string');
+      caffe_('solver_snapshot', self.hSolver_self, snapshot_filename);
     end
     function solve(self)
       caffe_('solver_solve', self.hSolver_self);
