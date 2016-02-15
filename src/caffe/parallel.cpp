@@ -446,7 +446,7 @@ void P2PSync<Dtype>::init_syncs(const vector<int>& gpus) {
 
   SolverParameter param(solver_->param());
   //vector<shared_ptr<P2PSync<Dtype> > > syncs(gpus.size());
-  vector<shared_ptr<P2PSync<Dtype>>>* syncs_ptr = new vector<shared_ptr<P2PSync<Dtype>>>(gpus.size());
+  vector<shared_ptr<P2PSync<Dtype> > >* syncs_ptr = new vector<shared_ptr<P2PSync<Dtype> > >(gpus.size());
   syncs_ptr_share = (void*)syncs_ptr;
 
   // Build the GPU tree by finding the parent for each solver
@@ -484,8 +484,8 @@ template<typename Dtype>
 void P2PSync<Dtype>::killthreadandcleanup() {
   if (syncs_ptr_share == NULL)
     return;
-  vector<shared_ptr<P2PSync<Dtype>>>* syncs_ptr;
-  syncs_ptr = (vector<shared_ptr<P2PSync<Dtype>>>*)syncs_ptr_share;
+  vector<shared_ptr<P2PSync<Dtype> > >* syncs_ptr;
+  syncs_ptr = (vector<shared_ptr<P2PSync<Dtype> > >*)syncs_ptr_share;
 
   for (int i = 1; i < syncs_ptr->size(); ++i) {
     (*syncs_ptr)[i]->StopInternalThread();
@@ -494,9 +494,9 @@ void P2PSync<Dtype>::killthreadandcleanup() {
 }
 
 template<typename Dtype>
-vector<shared_ptr<P2PSync<Dtype>>>* P2PSync<Dtype>::get_syncs() {
+vector<shared_ptr<P2PSync<Dtype> > >* P2PSync<Dtype>::get_syncs() {
   CHECK(!parent_);  // should only be called on root node
-  return (vector<shared_ptr<P2PSync<Dtype>>>*)syncs_ptr_share;
+  return (vector<shared_ptr<P2PSync<Dtype> > >*)syncs_ptr_share;
 }
 
 

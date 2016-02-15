@@ -329,7 +329,7 @@ static void get_solver_multigpu(MEX_ARGS) {
 		//syncs_[0]->run(gpus);
 		//sync_ptr->run(gpus);
 		mexPrintf("Building GPU tree......\n");
-		sync_ptr->build_gpu_tree(gpus);
+		sync_ptr->init_syncs(gpus);
 	}
 	catch (...)
 	{

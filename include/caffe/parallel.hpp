@@ -101,7 +101,7 @@ class P2PSync : public GPUParams<Dtype>, public Solver<Dtype>::Callback,
   // when destructor is called, killthreadandcleanup() will be called
   void init_syncs(const vector<int>& gpus);
 
-  vector<shared_ptr<P2PSync<Dtype>>>* get_syncs();
+  vector<shared_ptr<P2PSync<Dtype> > >* get_syncs();
 
  protected:
   void on_start();
