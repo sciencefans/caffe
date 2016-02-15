@@ -430,6 +430,78 @@ void P2PSync<Dtype>::run(const vector<int>& gpus) {
   }
 }
 
+// for invoke in matlab step by step
+void * syncs_ptr_share = NULL;
+template<typename Dtype>
+void P2PSync<Dtype>::init_syncs(const vector<int>& gpus) {
+  // Simply copy the code in run()
+  // Pair devices for map-reduce synchronization
+  vector<DevicePair> pairs;
+  DevicePair::compute(gpus, &pairs);
+  ostringstream s;
+  for (int i = 1; i < pairs.size(); ++i) {
+    s << (i == 1 ? "" : ", ") << pairs[i].parent() << ":" << pairs[i].device();
+  }
+  LOG(INFO) << "GPUs pairs " << s.str();
+
+  SolverParameter param(solver_->param());
+  //vector<shared_ptr<P2PSync<Dtype> > > syncs(gpus.size());
+  vector<shared_ptr<P2PSync<Dtype>>>* syncs_ptr = new vector<shared_ptr<P2PSync<Dtype>>>(gpus.size());
+  syncs_ptr_share = (void*)syncs_ptr;
+
+  // Build the GPU tree by finding the parent for each solver
+  for (int attempts = 0; attempts < pairs.size(); ++attempts) {
+    for (int i = 1; i < pairs.size(); ++i) {
+      if (!(*syncs_ptr)[i].get()) {
+        P2PSync<Dtype>* parent = NULL;
+        for (int j = 0; j < syncs_ptr->size(); ++j) {
+          P2PSync<Dtype>* sync = j == 0 ? this : (*syncs_ptr)[j].get();
+          if (sync) {
+            const SolverParameter& p = sync->solver()->param();
+            if (p.device_id() == pairs[i].parent()) {
+              parent = sync;
+            }
+          }
+        }
+        if (parent) {
+          param.set_device_id(pairs[i].device());
+          (*syncs_ptr)[i].reset(new P2PSync<Dtype>(solver_, parent, param));
+          parent->children_.push_back((P2PSync<Dtype>*) (*syncs_ptr)[i].get());
+        }
+      }
+    }
+  }
+  LOG(INFO) << "GPU tree built";
+  
+  //(*syncs_ptr)[0].reset(this);
+
+  for (int i = 1; i < syncs_ptr->size(); ++i) {
+    (*syncs_ptr)[i]->StartInternalThread();
+  }
+}
+
+template<typename Dtype>
+void P2PSync<Dtype>::killthreadandcleanup() {
+  if (syncs_ptr_share == NULL)
+    return;
+  vector<shared_ptr<P2PSync<Dtype>>>* syncs_ptr;
+  syncs_ptr = (vector<shared_ptr<P2PSync<Dtype>>>*)syncs_ptr_share;
+
+  for (int i = 1; i < syncs_ptr->size(); ++i) {
+    (*syncs_ptr)[i]->StopInternalThread();
+  }
+  syncs_ptr->clear();
+}
+
+template<typename Dtype>
+vector<shared_ptr<P2PSync<Dtype>>>* P2PSync<Dtype>::get_syncs() {
+  CHECK(!parent_);  // should only be called on root node
+  return (vector<shared_ptr<P2PSync<Dtype>>>*)syncs_ptr_share;
+}
+
+
+
+
 INSTANTIATE_CLASS(Params);
 INSTANTIATE_CLASS(GPUParams);
 INSTANTIATE_CLASS(P2PSync);

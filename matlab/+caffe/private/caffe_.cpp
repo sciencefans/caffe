@@ -17,7 +17,6 @@
 
 #include "caffe/caffe.hpp"
 #include "boost/algorithm/string.hpp"
-#include <direct.h>
 
 #define MEX_ARGS int nlhs, mxArray **plhs, int nrhs, const mxArray **prhs
 
@@ -45,8 +44,9 @@ void mxCHECK_FILE_EXIST(const char* file) {
 
 // The pointers to caffe::Solver and caffe::Net instances
 static vector<shared_ptr<Solver<float> > > solvers_;
-static vector<P2PSync<float>* > syncs_;
 static vector<shared_ptr<Net<float> > > nets_;
+//for multi-gpu
+static vector<P2PSync<float>* > syncs_;
 // init_key is generated at the beginning and everytime you call reset
 static double init_key = static_cast<double>(caffe_rng_rand());
 //static double init_key = -2;
@@ -316,7 +316,7 @@ static void get_solver_multigpu(MEX_ARGS) {
 				solver->net()->CopyTrainedLayersFrom(snapshot_file);
 			}
 			else {
-				mxERROR("=_=\n HZK's caffe only support .solverstate file and .caffemodel file....");
+				mxERROR("Only support *.solverstate *.caffemodel, please rename your input binary file");
 			}
 		}
 

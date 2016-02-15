@@ -92,14 +92,24 @@ class P2PSync : public GPUParams<Dtype>, public Solver<Dtype>::Callback,
   inline const shared_ptr<Solver<Dtype> >& solver() const {
     return solver_;
   }
-
+  //invoked by caffe.bin
   void run(const vector<int>& gpus);
+  
+  // invofed by matcaffe
+  // first, call build_gpu_tree
+  // then, call solver.Step() as usual
+  // when destructor is called, killthreadandcleanup() will be called
+  void init_syncs(const vector<int>& gpus);
+
+  vector<shared_ptr<P2PSync<Dtype>>>* get_syncs();
 
  protected:
   void on_start();
   void on_gradients_ready();
 
   void InternalThreadEntry();
+
+  void killthreadandcleanup();
 
   P2PSync<Dtype>* parent_;
   vector<P2PSync<Dtype>*> children_;
