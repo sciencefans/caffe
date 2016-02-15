@@ -12,6 +12,8 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <sys/stat.h>
+#include <sys/types.h>
 
 #include "mex.h"
 
@@ -290,7 +292,7 @@ static void get_solver_multigpu(MEX_ARGS) {
 			s << (i ? ", " : "") << gpus[i];
 		}
 		LOG(INFO) << "Using GPUs " << s.str();
-		mexPrintf("Using GPUs %s\n", s.str());
+		mexPrintf("Using GPUs %s\n", s.str().c_str());
 
 		solver_param.set_device_id(gpus[0]);
 		Caffe::SetDevice(gpus[0]);
@@ -755,7 +757,7 @@ static void protobuf_log_handler(::google::protobuf::LogLevel level, const char*
   const std::string& message) {
   const int max_err_length = 512;
   char err_message[max_err_length];
-  sprintf_s(err_message, max_err_length, "Protobuf : %s . at %s Line %d",
+  sprintf(err_message, "Protobuf : %s . at %s Line %d",
     message.c_str(), filename, line);
   LOG(INFO) << err_message;
   ::google::FlushLogFiles(0);
@@ -781,7 +783,13 @@ static void init_log(MEX_ARGS) {
 void initGlog() {
   if (is_log_inited) return;
   string log_dir = ".\\log\\";
+#ifdef _WIN32
   _mkdir(log_dir.c_str());
+#else
+  mkdir(log_dir.c_str(), S_IRWXU | S_IRWXG | S_IROTH);
+
+#endif
+
   std::string now_time = boost::posix_time::to_iso_extended_string(boost::posix_time::second_clock::local_time());
   now_time[13] = '-';
   now_time[16] = '-';
